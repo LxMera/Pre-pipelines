@@ -359,7 +359,7 @@ for kx in range(2):
     
     
     
-    '''-------------------------RuuuuuUUuuUnnnnnnNNNNNN ------------------------'''
+    '''-------------------------Run------------------------'''
     
     preproc.run('MultiProc', plugin_args={'n_procs': 4})
 
