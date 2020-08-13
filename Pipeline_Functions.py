@@ -165,9 +165,9 @@ def autoCNN(SUB, DirMod, DirPy):
     return tex, npy, keyOut
 
 def mostrar(uno, dos, tres):
-    print('LEONEL 1',uno)
-    print('LEONEL 2',dos)
-    print('LEONEL 3',tres)
+    print('ConexiOn del nodo 1',uno)
+    print('ConexiOn del nodo 2',dos)
+    print('ConexiOn del nodo 3',tres)
     
 def Ica_Aroma(path_aroma, in_file, mat_file, par_file, tr):
     import os
