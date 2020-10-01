@@ -5,7 +5,7 @@ Created on Thu Apr  9 14:49:42 2020
 
 @author: lxmera
 """
-
+###------------------------------------1 Librerias---------------------------------------------------------------
 from nipype.interfaces.fsl import (BET, ExtractROI, FAST, FLIRT, SliceTimer, Threshold, MELODIC, FilterRegressor)
 from nipype.algorithms.confounds import TCompCor
 from nipype.interfaces.utility import IdentityInterface
@@ -17,25 +17,28 @@ import os
 import Pipeline_Functions as pif
 import glob
 
-'''-------------------------------------------------------------------------'''
-session=['1']#, '2', '3']
+###------------------------------------2 Dirección de trabajo---------------------------------------------------------------
 Subjects_dir='/media/lxmera/Disco/Tesis/data/test3' #Direccion de los sujetos
 experiment_dir = '/media/lxmera/Disco/Tesis/output' #Salidad del flujo
-output_dir = 'datasink_prepro'+str(1)          #Salida resultados
-output_dir2= 'datasink_metrics'+str(1)         #Salida de las métricas
-working_dir = 'workingdir'+str(1)              #Direccion de trabajo
+output_dir = 'datasink_prepro'                      #Salida resultados
+output_dir2= 'datasink_metrics'                     #Salida de las métricas
+working_dir = 'workingdir'                          #Direccion de trabajo
 
-#Estructura de los datos
+###------------------------------------3 Estructura de los datos---------------------------------------------------------------
 anat_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'anat','sub-{asubject_id}_ses-{session_num}_T1w.nii.gz')
 func_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'func','sub-{asubject_id}_ses-{session_num}_task-rest_bold.nii.gz')
 templates = {'anat': anat_file, 'func': func_file}
 
-#Etiquetas de los sujetos
+###------------------------------------4 Iteradores----------------------------------------------------------------------------
+session=['1', '2', '3']
+
+#lee todas las carpetas en la dirección de los sujetos y solo los número id de los sujetos
 sub=glob.glob(Subjects_dir+'/*')
 subject_list0=[]
 for su in sub:
     subject_list0.append(su[-5:])    
 
+###------------------------------------5 parametros de los procesos---------------------------------------------------------------------
 componets_compcor=6         #Método de palo roto (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2214855/)
 fwhm = [4]#, 8]             # Ancho del suavizado (mm) (3.4 china)
 DOF=[12]#[3, 6, 7, 9, 12]   # Grados de libertad (HMC)
@@ -43,7 +46,7 @@ TR = 2.0                    # Tiempo de repeticion (s)
 iso_size = 4                # Escalado isometrico de la ima fun - tamanho voxel (in mm)
 dofx=12                     # Grados de libertad para el coregistro
 
-
+###------------------------------------6 flujo de trabajo----------------------------------------------------------------------------
 for kx in range(2):
     subject_list=[subject_list0[kx]]    
     '''-------------------------------------------------------------------------'''
