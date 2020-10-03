@@ -24,6 +24,10 @@ output_dir = 'datasink_prepro'                      #Salida resultados
 output_dir2= 'datasink_metrics'                     #Salida de las métricas
 working_dir = 'workingdir'                          #Direccion de trabajo
 
+#Documentos adicionales  
+CNN_H5=pif.downloadH5(opj(experiment_dir, working_dir))
+Aropy=pif.downloadAROMA(opj(experiment_dir, working_dir))
+
 ###------------------------------------3 Estructura de los datos---------------------------------------------------------------
 anat_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'anat','sub-{asubject_id}_ses-{session_num}_T1w.nii.gz')
 func_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'func','sub-{asubject_id}_ses-{session_num}_task-rest_bold.nii.gz')
@@ -47,24 +51,17 @@ iso_size = 4                # Escalado isometrico de la ima fun - tamanho voxel 
 dofx=12                     # Grados de libertad para el coregistro
 
 ###------------------------------------6 flujo de trabajo----------------------------------------------------------------------------
-for kx in range(2):
-    subject_list=[subject_list0[kx]]    
-    '''-------------------------------------------------------------------------'''
-    #Documentos adicionales  
-    CNN_H5=pif.downloadH5(opj(experiment_dir, working_dir))
-    Aropy=pif.downloadAROMA(opj(experiment_dir, working_dir))
+for kx in range(25):
+    subject_list=[subject_list0[kx]]      
     
     '''-------------------------Nodos de seleccion de sujetos-------------------'''
     '''#########################################################################'''
-    infosource = Node(IdentityInterface(fields=['asubject_id', 'session_num']),
-                      name="infosource")
+    infosource = Node(IdentityInterface(fields=['asubject_id', 'session_num']), name="infosource")
     infosource.iterables = [('asubject_id', subject_list), ('session_num', session)]
+        
+    selectfiles = Node(SelectFiles(templates, base_directory=Subjects_dir), name="selectfiles")
     
-    
-    selectfiles = Node(SelectFiles(templates, base_directory=Subjects_dir),
-                       name="selectfiles")
-    
-    '''-------------------------Nodos Coregistro--------------------------------'''
+    '''-------------------------Nodos de Corregistro--------------------------------'''
     '''#########################################################################'''
     bet_anat = Node(BET(frac=0.5, robust=True, mask=True, output_type='NIFTI_GZ'),
                     name="bet_anat")
