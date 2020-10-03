@@ -5,7 +5,8 @@ Created on Thu Apr  9 14:49:42 2020
 
 @author: lxmera
 """
-###------------------------------------1 Librerias---------------------------------------------------------------
+#------------------------------------1 Librerias---------------------------------------------------------------
+
 from nipype.interfaces.fsl import (BET, ExtractROI, FAST, FLIRT, SliceTimer, Threshold, MELODIC, FilterRegressor)
 from nipype.algorithms.confounds import TCompCor
 from nipype.interfaces.utility import IdentityInterface
@@ -17,7 +18,8 @@ import os
 import Pipeline_Functions as pif
 import glob
 
-###------------------------------------2 Dirección de trabajo---------------------------------------------------------------
+#------------------------------------2 Dirección de trabajo---------------------------------------------------------------
+
 Subjects_dir='/media/lxmera/Disco/Tesis/data/test3' #Direccion de los sujetos
 experiment_dir = '/media/lxmera/Disco/Tesis/output' #Salidad del flujo
 output_dir = 'datasink_prepro'                      #Salida resultados
@@ -28,41 +30,42 @@ working_dir = 'workingdir'                          #Direccion de trabajo
 CNN_H5=pif.downloadH5(opj(experiment_dir, working_dir))
 Aropy=pif.downloadAROMA(opj(experiment_dir, working_dir))
 
-###------------------------------------3 Estructura de los datos---------------------------------------------------------------
+#------------------------------------3 Estructura de los datos---------------------------------------------------------------
+
 anat_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'anat','sub-{asubject_id}_ses-{session_num}_T1w.nii.gz')
 func_file = opj('sub-{asubject_id}', 'ses-{session_num}', 'func','sub-{asubject_id}_ses-{session_num}_task-rest_bold.nii.gz')
 templates = {'anat': anat_file, 'func': func_file}
 
-###------------------------------------4 Iteradores----------------------------------------------------------------------------
-session=['1', '2', '3']
+#------------------------------------4 Iteradores----------------------------------------------------------------------------
 
-#lee todas las carpetas en la dirección de los sujetos y solo los número id de los sujetos
-sub=glob.glob(Subjects_dir+'/*')
+session=['1', '2', '3']           #Sesiones
+sub=glob.glob(Subjects_dir+'/*')  #Sujetos (Numeros)
 subject_list0=[]
 for su in sub:
     subject_list0.append(su[-5:])    
 
-###------------------------------------5 parametros de los procesos---------------------------------------------------------------------
-componets_compcor=6         #Método de palo roto (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2214855/)
+#------------------------------------5 parametros de los procesos---------------------------------------------------------------------
+
+componets_compcor=6         # Método de palo roto (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2214855/)
 fwhm = [4]#, 8]             # Ancho del suavizado (mm) (3.4 china)
 DOF=[12]#[3, 6, 7, 9, 12]   # Grados de libertad (HMC)
 TR = 2.0                    # Tiempo de repeticion (s)
 iso_size = 4                # Escalado isometrico de la ima fun - tamanho voxel (in mm)
 dofx=12                     # Grados de libertad para el coregistro
 
-###------------------------------------6 flujo de trabajo----------------------------------------------------------------------------
+#------------------------------------6 flujo de trabajo----------------------------------------------------------------------------
+
 for kx in range(25):
     subject_list=[subject_list0[kx]]      
     
-    '''-------------------------Nodos de seleccion de sujetos-------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.1 Nodos de seleccion de sujetos-------------------
+    
     infosource = Node(IdentityInterface(fields=['asubject_id', 'session_num']), name="infosource")
-    infosource.iterables = [('asubject_id', subject_list), ('session_num', session)]
-        
+    infosource.iterables = [('asubject_id', subject_list), ('session_num', session)]        
     selectfiles = Node(SelectFiles(templates, base_directory=Subjects_dir), name="selectfiles")
     
-    '''-------------------------Nodos de Corregistro--------------------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.2 Nodos de Corregistro--------------------------------
+    
     bet_anat = Node(BET(frac=0.5, robust=True, mask=True, output_type='NIFTI_GZ'),
                     name="bet_anat")
     
@@ -91,8 +94,8 @@ for kx in range(25):
                           name="applywarp_mean")
                            
     
-    '''-------------------------Crear flujo del Coregistro----------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.3 Flujo de corregistro----------------------
+    
     coregwf = Workflow(name='coregwf')
     coregwf.base_dir = opj(experiment_dir, working_dir)
     
@@ -108,8 +111,8 @@ for kx in range(25):
                      ])
     #coregwf.write_graph(graph2use='colored', format='svg', simple_form=True)
     
-    '''-------------------------Nodos flujo funcional---------------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.4 Nodos preprocesamiento (Funcional) ---------------------------'''
+    
     extract = Node(ExtractROI(t_min=4, t_size=-1, output_type='NIFTI_GZ'),
                    name="extract")
     
@@ -132,11 +135,11 @@ for kx in range(25):
     Filter2.inputs.highpass_freq=0
     Filter2.inputs.fs=1./TR
     
-    '''-------------------------Nodos de almacenamiento-------------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.5 Nodos de almacenamiento-------------------------
+
     #Sustituciones de los nombres
-    substitutions = [('_asubject_id_', 'sub-'),  #sub-01     Carpeta por sujeto
-                     ('_session_num', '/ses'), #task-rest  Carpeta de tareas
+    substitutions = [('_asubject_id_', 'sub-'), #sub-01     Carpeta por sujeto
+                     ('_session_num', '/ses'),  #task-rest  Carpeta de tareas
                      ('_fwhm_', 'fwhm-'),       #Variacion en el fwhm
                      ('_roi', ''),              #segunto argumento vacio
                      ('_mcf', ''),              #''
@@ -165,8 +168,8 @@ for kx in range(25):
     datasink2.inputs.substitutions = substitutions
     
     
-    '''-------------------------Nodos Elimininacion de ruido--------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.6 Nodos Elimininacion de ruido--------------------
+    
     ICA = Node(MELODIC(report = True),
                name="Descomposition_ICA")
     
@@ -222,8 +225,7 @@ for kx in range(25):
                         function=pif.mostrar),
                name='Text')
     
-    '''-------------------------Nodos Integracion e iteracion-------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.7 Nodos Integracion e iteracion-------------------
         
     def f_iterador3(in_list, index):
         return in_list[index]
@@ -233,8 +235,7 @@ for kx in range(25):
     
     def Integrate_three(file_1,file_2):
         file_1.append(file_2)
-        return list(file_1)
-    
+        return list(file_1)    
     
     Integ_Ar=Node(Function(input_names=['file_1', 'file_2'], output_names=['list'], function=Integrate_Files),
                 name='Integrate_files')
@@ -250,6 +251,7 @@ for kx in range(25):
     
     integrado_cnn=Node(Function(input_names=['file_1', 'file_2'], output_names=['list'], function=Integrate_Files),
                 name='Integrate_cnn')
+    
     iterador4=Node(Function(input_names=['in_list', 'index'],
                         output_names=['out_file'],
                         function=f_iterador3),
@@ -258,6 +260,7 @@ for kx in range(25):
     
     integrado_com=Node(Function(input_names=['file_1', 'file_2'], output_names=['list'], function=Integrate_Files),
                 name='Integrate_compcor')
+    
     iterador5=Node(Function(input_names=['in_list', 'index'],
                         output_names=['out_file'],
                         function=f_iterador3),
@@ -266,14 +269,15 @@ for kx in range(25):
     
     integrado_gsr=Node(Function(input_names=['file_1', 'file_2'], output_names=['list'], function=Integrate_Files),
                 name='Integrate_gsr')
+    
     iterador6=Node(Function(input_names=['in_list', 'index'],
                         output_names=['out_file'],
                         function=f_iterador3),
                name='iterador_6')
     iterador6.iterables = ("index", list(range(2)))
     
-    '''-------------------------Flujo de preprocesamiento-----------------------'''
-    '''#########################################################################'''
+    #------------------------------------6.8 Flujo Completo-----------------------
+    
     # Create a preprocessing workflow
     preproc = Workflow(name='preproc')
     preproc.base_dir = opj(experiment_dir, working_dir) #Une los caracteres con un /
@@ -359,7 +363,7 @@ for kx in range(25):
     
     
     
-    '''-------------------------Run------------------------'''
+    #------------------------------------Run------------------------
     
     preproc.run('MultiProc', plugin_args={'n_procs': 4})
 
